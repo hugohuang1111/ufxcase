@@ -1,50 +1,50 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class SurroundCamera : MonoBehaviour
 {
 
     /// <summary>
-    /// Íæ¼Òtransform
+    /// ç©å®¶transform
     /// </summary>
     public Transform Target;
 
     /// <summary>
-    /// ½ÇÉ«ÖĞĞÄµãÆ«ÒÆ
+    /// è§’è‰²ä¸­å¿ƒç‚¹åç§»
     /// </summary>
     public Vector3 TargetPivotOffset = new Vector3(0.0f, 1.0f, 0.0f);
 
     /// <summary>
-    /// Ë®Æ½Ğı×ªËÙ¶È
+    /// æ°´å¹³æ—‹è½¬é€Ÿåº¦
     /// </summary>
     public float HorizontalSpeed = 1.0f;
 
     /// <summary>
-    /// ´¹Ö±Ğı×ªËÙ¶È
+    /// å‚ç›´æ—‹è½¬é€Ÿåº¦
     /// </summary>
     public float VerticalSpeed = 1.0f;
 
     /// <summary>
-    /// ¾µÍ·ÍÆ½øµÄËÙ¶È
+    /// é•œå¤´æ¨è¿›çš„é€Ÿåº¦
     /// </summary>
     public float ZoomSpeed = 1.0f;
 
     /// <summary>
-    /// ×î´óµÄ´¹Ö±½Ç¶È
+    /// æœ€å¤§çš„å‚ç›´è§’åº¦
     /// </summary>
     public float MaxVerticalAngle = 30.0f;
 
     /// <summary>
-    /// ×îĞ¡µÄ´¹Ö±½Ç¶È
+    /// æœ€å°çš„å‚ç›´è§’åº¦
     /// </summary>
     public float MinVerticalAngle = -60.0f;
 
     /// <summary>
-    /// ÉãÏñ»úÆ«ÒÆµÄµÄ×î´óÖµ
+    /// æ‘„åƒæœºåç§»çš„çš„æœ€å¤§å€¼
     /// </summary>
     public float MaxDistance = 20.0f;
 
     /// <summary>
-    /// ÉãÏñ»úÆ«ÒÆµÄµÄ×îĞ¡Öµ
+    /// æ‘„åƒæœºåç§»çš„çš„æœ€å°å€¼
     /// </summary>
     public float MinDistance = 10.0f;
 
@@ -56,38 +56,40 @@ public class SurroundCamera : MonoBehaviour
     private Vector3 mDeltaAngle = new Vector3();
 
     public const string INPUT_MOUSE_SCROLLWHEEL = "Mouse ScrollWheel";
-    public const string ERROR_UN_BINDCAM = "ThirdPersonCam½Å±¾Ã»ÓĞ°ó¶¨ÉãÏñ»ú!";
-    public const string ERROR_UN_PLAYER = "ThirdPersonCam½Å±¾Ã»ÓĞÖ¸¶¨Íæ¼Ò";
+    public const string ERROR_UN_BINDCAM = "ThirdPersonCamè„šæœ¬æ²¡æœ‰ç»‘å®šæ‘„åƒæœº!";
+    public const string ERROR_UN_PLAYER = "ThirdPersonCamè„šæœ¬æ²¡æœ‰æŒ‡å®šç©å®¶";
 
     /// <summary>
-    /// ÉãÏñ»úµÄ»ù´¡·½Ïò
+    /// æ‘„åƒæœºçš„åŸºç¡€æ–¹å‘
     /// </summary>
     private Vector3 CamBaseAxis = Vector3.back;
 
     /// <summary>
-    /// ÉãÏñ»úºÍÅö×²ÌåµÄ½»µãÏòÉãÏñ»úµÄ¹Û²ìµãÒÆ¶¯µÄ¾àÀë
+    /// æ‘„åƒæœºå’Œç¢°æ’ä½“çš„äº¤ç‚¹å‘æ‘„åƒæœºçš„è§‚å¯Ÿç‚¹ç§»åŠ¨çš„è·ç¦»
     /// </summary>
     private float CollisionReturnDis = 1f;
 
     /// <summary>
-    /// ÉãÏñ»ú
+    /// æ‘„åƒæœº
     /// </summary>
     private Transform mCameraObj;
 
     /// <summary>
-    /// Ë®Æ½Ğı×ªµÄ½Ç¶È
+    /// æ°´å¹³æ—‹è½¬çš„è§’åº¦
     /// </summary>
     private float mAngleH = 0.0f;
 
     /// <summary>
-    /// ´¹Ö±Ğı×ªµÄ½Ç¶È
+    /// å‚ç›´æ—‹è½¬çš„è§’åº¦
     /// </summary>
     private float mAngleV = -30.0f;
 
     /// <summary>
-    /// ÉãÏñ»úÆ«ÒÆµÄ±¶ÂÊ
+    /// æ‘„åƒæœºåç§»çš„å€ç‡
     /// </summary>
     private float mDistance = 0.0f;
+
+    private Vector3 mDestionatePos = Vector3.zero;
 
     void Awake() {
         mCameraObj = GetComponent<Camera>().transform;
@@ -111,18 +113,35 @@ public class SurroundCamera : MonoBehaviour
             return;
         }
 
-        HandleInput(ref mDeltaAngle);
-        if (0 == mDeltaAngle.magnitude && !mFirstApply) {
-            return;
-        }
-        mFirstApply = false;
+        if (Vector3.zero == mDestionatePos) {
+            HandleInput(ref mDeltaAngle);
+            if (0 == mDeltaAngle.magnitude && !mFirstApply) {
+                return;
+            }
+            mFirstApply = false;
 
-        mAngleH += (Mathf.Clamp(mDeltaAngle.x, -1.0f, 1.0f) * HorizontalSpeed);
-        mAngleV += (Mathf.Clamp(mDeltaAngle.y, -1.0f, 1.0f) * VerticalSpeed);
-        mDistance -= mDeltaAngle.z * ZoomSpeed;
+            mAngleH += (Mathf.Clamp(mDeltaAngle.x, -1.0f, 1.0f) * HorizontalSpeed);
+            mAngleV += (Mathf.Clamp(mDeltaAngle.y, -1.0f, 1.0f) * VerticalSpeed);
+            mDistance -= mDeltaAngle.z * ZoomSpeed;
+        } else {
+            Utils.MakeSureDegreeFirstPeriod(ref mAngleH);
+            mAngleH = Mathf.Lerp(mAngleH, mDestionatePos.x, Time.deltaTime);
+            mAngleV = Mathf.Lerp(mAngleV, mDestionatePos.y, Time.deltaTime);
+            mDistance = Mathf.Lerp(mDistance, mDestionatePos.z, Time.deltaTime);
+
+            if (Utils.IsFloatEqual(mAngleH, mDestionatePos.x) &&
+                Utils.IsFloatEqual(mAngleV, mDestionatePos.y) &&
+                Utils.IsFloatEqual(mDistance, mDestionatePos.z)) {
+                    mDestionatePos.x = 0;
+                    mDestionatePos.y = 0;
+                    mDestionatePos.z = 0;
+                }
+        }
 
         mAngleV = Mathf.Clamp(mAngleV, MinVerticalAngle, MaxVerticalAngle);
         mDistance = Mathf.Clamp(mDistance, MinDistance, MaxDistance);
+
+        // Debug.Log(string.Format("H, V, D: {0}, {1}, {2}", mAngleH, mAngleV, mDistance));
 
         Quaternion animRotation = Quaternion.Euler(-mAngleV, mAngleH, 0.0f);
         Quaternion camYRotation = Quaternion.Euler(0.0f, mAngleH, 0.0f);
@@ -147,7 +166,15 @@ public class SurroundCamera : MonoBehaviour
 
     }
 
+    public void MoveTo(Vector3 destInfo) {
+        mDestionatePos = destInfo;
+        Utils.MakeSureDegreeFirstPeriod(ref mDestionatePos.x);
+    }
+
     private void HandleInput(ref Vector3 move) {
+        move.x = 0;
+        move.y = 0;
+        move.z = 0;
         if (Input.GetMouseButtonDown(0)) {
             mbDraging = true;
         }
