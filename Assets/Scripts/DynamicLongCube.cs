@@ -51,7 +51,7 @@ public class DynamicLongCube : MonoBehaviour {
     }
 
     public void Init(int pointLen) {
-        mVertices = new List<Vector3>(pointLen*4);
+        mVertices = new List<Vector3>(pointLen*4*2 + 8);
         mIndices = new List<int>((pointLen-1)*8*3 + 4*3);
     }
 
@@ -69,7 +69,7 @@ public class DynamicLongCube : MonoBehaviour {
         mLastPoint = point;
 
         int verticesLenght = mVertices.Count;
-        if (4 == mVertices.Count) {
+        if (8 == mVertices.Count) {
             /*
              * 3          2
              *  + ------ +
@@ -81,6 +81,12 @@ public class DynamicLongCube : MonoBehaviour {
              *  0,3,2  0,2,1
              * 
              */
+
+            mVertices.Add(mVertices[mVertices.Count - 4]);
+            mVertices.Add(mVertices[mVertices.Count - 4]);
+            mVertices.Add(mVertices[mVertices.Count - 4]);
+            mVertices.Add(mVertices[mVertices.Count - 4]);
+
             // start face
             mIndices.Add(0);
             mIndices.Add(3);
@@ -92,98 +98,98 @@ public class DynamicLongCube : MonoBehaviour {
         } else {
             /*
              * 
-             *   7  + ------ + 6
+             * 11/15 + ------ + 10/14
              *     /       / |
-             *  3 /     2 /  |
-             *  + ------ +   + 5
-             *  |   4    |  /
+             *3/7 /   2/6 /  |
+             *  + ------ +   + 9/13
+             *  | 8/12   |  /
              *  |        | /
              *  + ------ +
-             * 0         1
+             * 0/4        1/5
              *
              */
 
             /*
              * bottom face
              * 
-             * 1          5
+             * 1          9
              *  + ------ +
              *  |        |
              *  |        |
              *  + ------ +
-             * 0          4
+             * 0          8
              * 
-             * 0,1,5    0,5,4
+             * 0,1,9    0,9,8
              * 
              */
-            mIndices.Add(verticesLenght - 8);
+            mIndices.Add(verticesLenght - 16);
+            mIndices.Add(verticesLenght - 15);
             mIndices.Add(verticesLenght - 7);
-            mIndices.Add(verticesLenght - 3);
 
+            mIndices.Add(verticesLenght - 16);
+            mIndices.Add(verticesLenght - 7);
             mIndices.Add(verticesLenght - 8);
-            mIndices.Add(verticesLenght - 3);
-            mIndices.Add(verticesLenght - 4);
 
             /*
              * right face
              * 
-             * 2          6
+             * 6          14
              *  + ------ +
              *  |        |
              *  |        |
              *  + ------ +
-             * 1          5
+             * 5          13
              * 
-             * 1,2,6    1,6,5
+             * 5,6,14    5,14,13
              * 
              */
-            mIndices.Add(verticesLenght - 7);
-            mIndices.Add(verticesLenght - 6);
+            mIndices.Add(verticesLenght - 11);
+            mIndices.Add(verticesLenght - 10);
             mIndices.Add(verticesLenght - 2);
 
-            mIndices.Add(verticesLenght - 7);
+            mIndices.Add(verticesLenght - 11);
             mIndices.Add(verticesLenght - 2);
             mIndices.Add(verticesLenght - 3);
 
             /*
              * top face
              * 
-             * 3          7
+             * 3          11
              *  + ------ +
              *  |        |
              *  |        |
              *  + ------ +
-             * 2          6
+             * 2          10
              * 
-             * 2,3,7    2,7,6
+             * 2,3,11    2,11,10
              * 
              */
-            mIndices.Add(verticesLenght - 6);
+            mIndices.Add(verticesLenght - 14);
+            mIndices.Add(verticesLenght - 13);
             mIndices.Add(verticesLenght - 5);
-            mIndices.Add(verticesLenght - 1);
 
+            mIndices.Add(verticesLenght - 14);
+            mIndices.Add(verticesLenght - 5);
             mIndices.Add(verticesLenght - 6);
-            mIndices.Add(verticesLenght - 1);
-            mIndices.Add(verticesLenght - 2);
 
             /*
              * left face
              * 
-             * 0          4
+             * 4          12
              *  + ------ +
              *  |        |
              *  |        |
              *  + ------ +
-             * 3          7
+             * 7          15
              * 
-             * 3,0,4    3,4,7
+             * 7,4,12    7,12,15
              * 
              */
-            mIndices.Add(verticesLenght - 5);
-            mIndices.Add(verticesLenght - 8);
+            mIndices.Add(verticesLenght - 9);
+            mIndices.Add(verticesLenght - 12);
             mIndices.Add(verticesLenght - 4);
 
-            mIndices.Add(verticesLenght - 5);
+            mIndices.Add(verticesLenght - 9);
             mIndices.Add(verticesLenght - 4);
             mIndices.Add(verticesLenght - 1);
         }
@@ -204,6 +210,12 @@ public class DynamicLongCube : MonoBehaviour {
          * 0,1,2   0,2,3
          */
         // end face
+
+        mVertices.Add(mVertices[mVertices.Count - 4]);
+        mVertices.Add(mVertices[mVertices.Count - 4]);
+        mVertices.Add(mVertices[mVertices.Count - 4]);
+        mVertices.Add(mVertices[mVertices.Count - 4]);
+
         int verticesLenght = mVertices.Count;
         mIndices.Add(verticesLenght - 4);
         mIndices.Add(verticesLenght - 3);
@@ -231,6 +243,12 @@ public class DynamicLongCube : MonoBehaviour {
         points.Add(v + point);
         v = m*(new Vector3(-w/2, h/2, 0));
         points.Add(v + point);
+
+        // double vertex for split normal in point
+        points.Add(points[points.Count - 4]);
+        points.Add(points[points.Count - 4]);
+        points.Add(points[points.Count - 4]);
+        points.Add(points[points.Count - 4]);
         // Debug.LogFormat("{0} => {1}, Dir:{2}", v, v2, Dir);
     }
 
