@@ -18,6 +18,8 @@ Shader "UFXCase/BRDF"
         Pass {
             Tags { "LightMode"="ForwardAdd" }
 
+			Cull Back
+
             CGPROGRAM
 
             #pragma vertex vert
@@ -60,7 +62,7 @@ Shader "UFXCase/BRDF"
                 return o;
             }
 
-            const float PI = 3.14159265359f;
+            #define PI 3.14159265359f
 
             fixed3 getNormalFromMap(v2f i) {
                 // https://www.bilibili.com/read/cv4583341/
@@ -86,7 +88,7 @@ Shader "UFXCase/BRDF"
                 float NdotH2 = NdotH*NdotH;
 
                 float nom   = a2;
-                float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+                float denom = NdotH2 * (a2 - 1.0) + 1.0;
                 denom = PI * denom * denom;
 
                 return nom/denom;
@@ -160,12 +162,15 @@ Shader "UFXCase/BRDF"
                 fixed3 kD = 1 - kS;
                 kD *= (1.0 - metallic);
 
-                Lo += (kD * albedo / 3.1415926 + specular) * radiance * NdotL;
+                Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+
                 fixed3 ambient = fixed3(0.03, 0.03, 0.03) * albedo * ao;
 
                 color.rgb = ambient + Lo;
 
-                color.rgb = specular;
+                // NDF = max(dot(N, H) * sign(NdotL), 0.0);
+                // color.rgb = specular;
+                // color.rgb = Lo;
 
                 return color;
             }
