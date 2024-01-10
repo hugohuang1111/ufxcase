@@ -15,4 +15,18 @@ public class Utils {
 
         return dif < 0.01f;
     }
+
+    public static bool IsStringEmpty(string a) {
+        if (a is null)
+        {
+            return true;
+        }
+        if (0 == a.Length)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
 }
