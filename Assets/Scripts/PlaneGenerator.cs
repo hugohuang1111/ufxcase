@@ -82,8 +82,8 @@ public class PlaneGenerator : MonoBehaviour
         for (int z = 0; z <= gridH; z++)
         {
             float zpercent = (float)z / gridH;
-            var bezierLeft = BezierUtils.CubicBezier(CtlLeft1, CtlLeft2, zpercent);
-            var bezierRight = BezierUtils.CubicBezier(CtlRight1, CtlRight2, zpercent);
+            var bezierLeft = CubicBezierUtils.CubicBezierNormal(CtlLeft1, CtlLeft2, zpercent);
+            var bezierRight = CubicBezierUtils.CubicBezierNormal(CtlRight1, CtlRight2, zpercent);
 
             var left = VectorLerp(LeftTop, LeftBottom, bezierLeft);
             var right = VectorLerp(RightTop, RightBottom, bezierRight);
