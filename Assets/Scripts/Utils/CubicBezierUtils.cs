@@ -7,7 +7,7 @@ public class CubicBezierUtils
     public static Vector2 CubicBezierNormal(Vector2 ctl1, Vector2 ctl2, float t)
     {
         ResetTempValue(ctl1.x, ctl1.y, ctl2.x, ctl2.y);
-        var y = solve(Mathf.Clamp01(t), 0.000001f);
+        var y = solve(Mathf.Clamp01(t), 0.001f);
 
         return new Vector2(t, y);
     }
