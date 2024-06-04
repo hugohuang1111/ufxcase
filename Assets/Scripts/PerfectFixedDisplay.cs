@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using static UnityEditor.PlayerSettings;
 
@@ -30,9 +31,6 @@ public class PerfectFixedDisplay : MonoBehaviour
     {
         _gizmosCubePoints = new List<Vector3>();
         _camera = GetComponent<Camera>();
-
-        _tanValOfFOV = Mathf.Tan(_camera.fieldOfView * Mathf.Deg2Rad * 0.5f);
-        _tanValOfHorFOV = _tanValOfFOV * _camera.aspect;
     }
 
 #if UNITY_EDITOR
@@ -158,11 +156,34 @@ public class PerfectFixedDisplay : MonoBehaviour
         Transform camTF = _camera.transform;
         var lookAtPos = LookAt.position + LookAtOffset;
 
+        var LookAtDirNormal = LookAtDirection.normalized;
         var BBInWorld = CalculateBoundingBox(LookAt);
-        var camPos = lookAtPos - LookAtDirection * BBInWorld.size.magnitude * 2;
+        var camPos = lookAtPos - LookAtDirNormal * BBInWorld.size.magnitude * 5;
         camTF.position = camPos;
         camTF.LookAt(lookAtPos);
         _camera.orthographic = false;
+
+        var BBVerticesInWorld = GetBoundingBoxVertices(BBInWorld);
+        var BBVerticesInCamera = TransVerticesWorld2Camera(_camera, BBVerticesInWorld);
+        var BoundsInCamera = CalcBoundsOfVertices(BBVerticesInCamera);
+        BBVerticesInCamera = GetBoundingBoxVertices(BoundsInCamera);
+        TransVerticesCamera2World(_camera, BBVerticesInCamera);
+
+        // [0] = 左、[1] = 右、[2] = 下、[3] = 上、[4] = 近、[5] = 远
+        var planes = GeometryUtility.CalculateFrustumPlanes(_camera);
+        var marginV = MinDistanceToTopPlane(BBVerticesInCamera, -planes[3].normal * planes[3].distance, planes[3].normal);
+        var marginT = MinDistanceToBottomPlane(BBVerticesInCamera, -planes[2].normal * planes[2].distance, planes[2].normal);
+        marginV = Mathf.Min(marginV, marginT);
+        var marginH = MinDistanceToLeftPlane(BBVerticesInCamera, -planes[0].normal * planes[0].distance, planes[0].normal);
+        marginT = MinDistanceToRightPlane(BBVerticesInCamera, -planes[1].normal * planes[1].distance, planes[1].normal);
+        marginH = Mathf.Min(marginH, marginT);
+
+        var tanValOfFOV = Mathf.Tan(_camera.fieldOfView * Mathf.Deg2Rad * 0.5f);
+        var tanValOfFOVH = tanValOfFOV * _camera.aspect;
+        var moveD = marginV / tanValOfFOV;
+        moveD = Mathf.Min(moveD, marginH / tanValOfFOVH);
+
+        camTF.position += (LookAtDirNormal * moveD);
     }
 
     private Vector3 _resavedPosition;
@@ -196,6 +217,13 @@ public class PerfectFixedDisplay : MonoBehaviour
         return vecticesInCamera;
     }
 
+    /**
+     *
+     * Return:
+     * front left-bottom, left-top, right-top, right-bottom
+     * rear  left-bottom, left-top, right-top, right-bottom
+     *
+     */
     Vector3[] GetBoundingBoxVertices(Bounds bounds)
     {
         Vector3[] corners = new Vector3[8];
@@ -259,6 +287,133 @@ public class PerfectFixedDisplay : MonoBehaviour
         intersectionPoint = rayOrigin + t * rayDirection;
         return true;
     }
+
+    private float MinDistanceToTopPlane(Vector3[] vertices, Vector3 planePoint, Vector3 planeNormal)
+    {
+        float d = float.MaxValue;
+        Vector3 intersectionPoint;
+        if (RayIntersectPlane(vertices[0], vertices[1] - vertices[0], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[1]));
+        }
+        if (RayIntersectPlane(vertices[3], vertices[2] - vertices[3], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[2]));
+        }
+        if (RayIntersectPlane(vertices[4], vertices[5] - vertices[4], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[5]));
+        }
+        if (RayIntersectPlane(vertices[7], vertices[6] - vertices[7], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[6]));
+        }
+
+        return d;
+    }
+
+    private float MinDistanceToBottomPlane(Vector3[] vertices, Vector3 planePoint, Vector3 planeNormal)
+    {
+        float d = float.MaxValue;
+        Vector3 intersectionPoint;
+        if (RayIntersectPlane(vertices[1], vertices[0] - vertices[1], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[0]));
+        }
+        if (RayIntersectPlane(vertices[2], vertices[3] - vertices[2], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[3]));
+        }
+        if (RayIntersectPlane(vertices[5], vertices[4] - vertices[5], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[4]));
+        }
+        if (RayIntersectPlane(vertices[6], vertices[7] - vertices[6], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[7]));
+        }
+
+        return d;
+    }
+
+    private float MinDistanceToLeftPlane(Vector3[] vertices, Vector3 planePoint, Vector3 planeNormal)
+    {
+        float d = float.MaxValue;
+        Vector3 intersectionPoint;
+        if (RayIntersectPlane(vertices[2], vertices[1] - vertices[2], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[1]));
+        }
+        if (RayIntersectPlane(vertices[6], vertices[5] - vertices[6], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[5]));
+        }
+        if (RayIntersectPlane(vertices[3], vertices[0] - vertices[3], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[0]));
+        }
+        if (RayIntersectPlane(vertices[7], vertices[4] - vertices[7], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[4]));
+        }
+
+        return d;
+    }
+
+    private float MinDistanceToRightPlane(Vector3[] vertices, Vector3 planePoint, Vector3 planeNormal)
+    {
+        float d = float.MaxValue;
+        Vector3 intersectionPoint;
+        if (RayIntersectPlane(vertices[1], vertices[2] - vertices[1], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[2]));
+        }
+        if (RayIntersectPlane(vertices[5], vertices[6] - vertices[5], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[6]));
+        }
+        if (RayIntersectPlane(vertices[0], vertices[3] - vertices[0], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[3]));
+        }
+        if (RayIntersectPlane(vertices[4], vertices[7] - vertices[4], planePoint, planeNormal, out intersectionPoint))
+        {
+            d = Mathf.Min(d, Vector3.Distance(intersectionPoint, vertices[7]));
+        }
+
+        return d;
+    }
+
+    private Bounds CalcBoundsOfVertices(Vector3[] vertices)
+    {
+        var min = Vector3Max;
+        var max = Vector3Min;
+        foreach (var p in vertices)
+        {
+            min = Vector3.Min(min, p);
+            max = Vector3.Max(max, p);
+        }
+        return new Bounds((min + max) / 2, max - min);
+    }
+
+    private void TransVerticesCamera2World(Camera camera, Vector3[] vertices)
+    {
+        for (var i = 0; i < vertices.Length; i++)
+        {
+            vertices[i] = camera.transform.TransformPoint(vertices[i]);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
